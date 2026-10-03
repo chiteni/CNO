@@ -76,7 +76,7 @@
     .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:20px}.toolbar .brand{justify-self:center}.toolbar .intro{min-width:0}.toolbar-actions{justify-self:end}.toolbar .brand img{width:42px;height:42px}.toolbar .brand-name{font-size:13px}.toolbar .brand-sub{font-size:9px}
     @media(max-width:700px){.toolbar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px}.toolbar .intro{grid-column:1 / -1;grid-row:2;justify-self:start}.toolbar .brand{grid-column:2;grid-row:1}.toolbar-actions{grid-column:3;grid-row:1}}
   </style>
-<script src="../common-menu.js" defer></script></head>
+<script src="../common/common-menu.js" defer></script></head>
 <body>
   <div class="page">
 
@@ -87,7 +87,7 @@
             <div><div class="eyebrow">Your coding playground</div><h1 id="page-title">Try JavaScript, right here.</h1><p>Write a little code, press Run, and see what happens in the console below.</p></div>
           </section>
           <div class="brand">
-        <img src="CNO-logo.png" alt="College National Orthodox logo">
+        <img src="../images/cno-logo.png" alt="College National Orthodox logo">
         <div class="brand-copy"><span class="brand-name">CNO JavaScript Lab</span><span class="brand-sub">Learn · Write · Run</span></div>
       </div>
           
@@ -166,8 +166,10 @@
         showConsole();
         emptyMessage('Running your code…');
         runState.textContent = '· Running';
+        let hadError = false;
         const boot = `
           const stringify = value => {
+            if (value instanceof Error) return value.name + ': ' + value.message;
             if (typeof value === 'string') return value;
             if (value === undefined) return 'undefined';
             if (typeof value === 'function') return value.toString();
@@ -177,10 +179,11 @@
           for (const level of ['log','info','warn','error','debug','table']) {
             console[level] = (...args) => postMessage({type: level === 'debug' ? 'log' : level, values: args.map(stringify).join(' ')});
           }
-          self.onerror = event => { postMessage({type:'error', values: event.message || 'Something went wrong.'}); return true; };
+          self.addEventListener('error', event => { event.preventDefault(); postMessage({type:'error', values: event.message || 'Something went wrong.'}); });
+          self.addEventListener('unhandledrejection', event => { event.preventDefault(); postMessage({type:'error', values: stringify(event.reason)}); });
           (async () => {\n${code.value}\n})().then(
             () => postMessage({type:'done'}),
-            error => { postMessage({type:'error', values: error && error.stack ? error.stack : String(error)}); postMessage({type:'done'}); }
+            error => { postMessage({type:'error', values: stringify(error)}); postMessage({type:'done'}); }
           );
         `;
         try {
@@ -195,8 +198,13 @@
               activeWorker = null;
               if (activeUrl) URL.revokeObjectURL(activeUrl);
               activeUrl = null;
-              runState.textContent = '· Finished';
+              runState.textContent = hadError ? '· Error' : '· Finished';
+              if (!hadError && consoleOutput.querySelector('.console-empty')) emptyMessage('Code finished without output.');
               return;
+            }
+            if (event.data.type === 'error') {
+              hadError = true;
+              runState.textContent = '· Error';
             }
             addOutput(event.data.type, event.data.values || '');
           };
@@ -223,6 +231,7 @@
           activeWorker.onmessageerror = () => addOutput('error', 'Could not read the code output.');
           runState.textContent = '· Running';
         } catch (error) {
+          stopWorker();
           addOutput('error', error.message || String(error));
           runState.textContent = '· Error';
         }

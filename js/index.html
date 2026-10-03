@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f8fc">
+  <meta name="description" content="A simple, responsive JavaScript playground for learning and testing code.">
+  <title>CNO JavaScript Lab</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%230d78ad'/%3E%3Cpath d='m15 12-8 8 8 8m10-16 8 8-8 8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root{color-scheme:light;--ink:#172b40;--muted:#6f8194;--blue:#087eb5;--blue-dark:#075e8e;--green:#6a9b42;--line:#e2eaf1;--panel:#0d1724;--panel-2:#111f2e;--console:#101c29;--soft:#f5f8fc}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--soft);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+    button{font:inherit}
+    .page{max-width:1440px;margin:0 auto;padding:0 38px 40px}
+    header{min-height:90px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 0;border-bottom:1px solid #e8edf2}
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .brand img{width:48px;height:48px;object-fit:contain;flex:none}
+    .brand-copy{display:flex;flex-direction:column;gap:2px}
+    .brand-name{font-size:15px;font-weight:750;letter-spacing:.01em}
+    .brand-sub{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .header-note{display:flex;align-items:center;gap:8px;color:#62778a;font-size:11px;white-space:nowrap;flex:none}
+    .live-dot,.status-dot{width:8px;height:8px;border-radius:50%;background:#70a948;box-shadow:0 0 0 4px #70a9481c}
+    main{padding-top:8px}
+    .intro{display:flex;justify-content:flex-start;align-items:center;gap:18px;margin:0;flex:1;min-width:0}
+    .eyebrow{display:flex;align-items:center;gap:6px;color:var(--blue);font-size:9px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+    .eyebrow:before{content:"";width:18px;height:2px;background:var(--green);border-radius:3px}
+    h1{margin:0;font-size:20px;line-height:1.15;letter-spacing:-.035em}
+    .intro p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
+    .tip{display:flex;align-items:center;gap:5px;border:1px solid #dce8ef;border-radius:8px;padding:7px 9px;color:#526b7f;background:#fff;font-size:10px;white-space:nowrap}
+    kbd{font-family:inherit;font-size:10px;background:#f1f5f8;border:1px solid #dce5ec;border-radius:4px;padding:2px 4px;color:#435a6f}
+    .workbench{border:1px solid #dce5ec;background:#fff;border-radius:15px;box-shadow:0 14px 42px #24415c0d;overflow:hidden}
+    .toolbar{min-height:62px;padding:12px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
+    .file-label{display:flex;align-items:center;gap:10px;min-width:0}
+    .js-icon{width:27px;height:27px;border-radius:7px;background:#f2d54e;color:#352d05;font-size:11px;font-weight:850;display:grid;place-items:center;flex:none}
+    .file-name{font-size:13px;font-weight:650}
+    .file-type{font-size:11px;color:#8a9aaa;margin-top:2px}
+    .toolbar-actions{display:flex;align-items:center;gap:9px;flex:none}
+    .button{border:1px solid var(--line);background:white;color:#4b6275;min-height:38px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .16s,border-color .16s,transform .16s}
+    .button:hover{background:#f7fafc;border-color:#c4d3df}
+    .button:active{transform:translateY(1px)}
+    .button:focus-visible,.run:focus-visible{outline:3px solid #56a8d866;outline-offset:2px}
+    .button svg,.run svg{width:15px;height:15px;fill:currentColor}
+    .run{border:0;background:var(--blue);color:#fff;min-height:39px;padding:0 17px;border-radius:8px;font-size:13px;font-weight:750;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 5px 12px #087eb52c;transition:background .16s,transform .16s}
+    .run:hover{background:var(--blue-dark)}
+    .run:active{transform:translateY(1px)}
+    .editor{background:var(--panel);display:grid;grid-template-columns:54px minmax(0,1fr);min-height:380px}
+    .gutter{padding:22px 0 22px 0;text-align:right;color:#526478;background:#0b1420;border-right:1px solid #1e2b39;user-select:none;overflow:hidden}
+    .line-number{height:25px;padding-right:15px;font:13px/25px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .code{display:block;width:100%;height:380px;resize:vertical;border:0;outline:0;padding:22px 24px;background:var(--panel);color:#d9e6f2;caret-color:#7bc8ee;font:14px/25px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto}
+    .code::selection{background:#197bad66}
+    .editor-footer{height:37px;background:#101d2a;border-top:1px solid #1e2b39;padding:0 15px;display:flex;align-items:center;justify-content:space-between;color:#8194a7;font-size:11px}
+    .editor-foot-left{display:flex;align-items:center;gap:8px}
+    .js-pill{border:1px solid #293b4c;border-radius:5px;padding:3px 6px;color:#bac8d5}
+    .console{border-top:1px solid #273747;background:var(--console);color:#d4e0ea}
+    .console[hidden]{display:none}
+    .console-heading{height:49px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #233444}
+    .console-title{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:.03em}
+    .console-symbol{color:#85abc4;font:14px ui-monospace,monospace}
+    .console-meta{color:#8193a5;font-size:11px}
+    .clear-button{color:#9eb0bf;border:0;background:none;padding:7px 0;cursor:pointer;font-size:11px}
+    .clear-button:hover{color:#fff}
+    .console-body{padding:11px 18px 16px;min-height:94px;max-height:245px;overflow:auto;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .console-empty{color:#8092a3;padding:10px 0;font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px}
+    .output-row{display:flex;gap:12px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #20303d;white-space:pre-wrap;overflow-wrap:anywhere}
+    .output-row:last-child{border-bottom:0}
+    .output-kind{min-width:39px;text-transform:uppercase;font-size:9px;font-weight:800;letter-spacing:.07em;color:#72b7d8;padding-top:2px}
+    .output-row.warn .output-kind{color:#f0c46b}.output-row.error .output-kind{color:#ff8b87}.output-row.info .output-kind{color:#91b8ff}
+    footer{display:flex;justify-content:space-between;gap:12px;padding:14px 3px 0;color:#8091a2;font-size:11px}
+    footer span:first-child{display:flex;align-items:center;gap:7px}
+    .small-green{width:6px;height:6px;border-radius:50%;background:#79a84e}
+    @media(max-width:700px){.page{padding:0 15px 25px}header{height:68px}.brand img{width:41px;height:41px}.brand-name{font-size:13px}.brand-sub{font-size:9px}.header-note{font-size:11px}.intro{align-items:flex-start;flex-direction:column;gap:14px;padding-top:3px}.intro p{font-size:13px}.tip{font-size:11px;padding:8px 10px}.toolbar{padding:11px 12px;min-height:58px}.toolbar-actions{gap:7px}.button{min-height:36px;padding:0 9px;font-size:11px}.run{min-height:37px;padding:0 12px;font-size:12px}.editor{grid-template-columns:41px;min-height:330px}.gutter{grid-column:1;grid-row:1;padding-top:17px}.code{grid-column:2;grid-row:1;height:330px;padding:17px 13px;font-size:12px;line-height:23px}.line-number{height:23px;line-height:23px;font-size:11px;padding-right:11px}.editor-footer{height:34px}.console-heading{height:45px;padding:0 13px}.console-body{padding:9px 13px 13px}footer{font-size:10px}.file-type{display:none}}
+    @media(max-width:1000px){header{gap:16px}.intro{gap:10px;flex-wrap:wrap;justify-content:flex-start}.brand{flex:none}.intro h1{font-size:18px}}
+    @media(max-width:700px){header{height:auto;min-height:68px;gap:14px}.toolbar{flex-wrap:wrap}.intro{flex-basis:100%;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:0}.toolbar-actions{margin-left:auto}.intro p{font-size:11px}.tip{font-size:10px;padding:6px 8px}}
+    @media(max-width:390px){.brand{gap:8px}.brand-sub{letter-spacing:.04em}.toolbar-actions{gap:5px}.button{padding:0 7px}.button .label{display:none}.run{padding:0 10px}.editor{grid-template-columns:35px}.line-number{padding-right:8px}}
+    .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:20px}.toolbar .brand{justify-self:center}.toolbar .intro{min-width:0}.toolbar-actions{justify-self:end}.toolbar .brand img{width:42px;height:42px}.toolbar .brand-name{font-size:13px}.toolbar .brand-sub{font-size:9px}
+    @media(max-width:700px){.toolbar{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px}.toolbar .intro{grid-column:1 / -1;grid-row:2;justify-self:start}.toolbar .brand{grid-column:2;grid-row:1}.toolbar-actions{grid-column:3;grid-row:1}}
+  </style>
+<script src="../common-menu.js" defer></script></head>
+<body>
+  <div class="page">
+
+    <main>
+      <section class="workbench" aria-label="JavaScript editor and console">
+        <div class="toolbar">
+          <section class="intro" aria-labelledby="page-title">
+            <div><div class="eyebrow">Your coding playground</div><h1 id="page-title">Try JavaScript, right here.</h1><p>Write a little code, press Run, and see what happens in the console below.</p></div>
+          </section>
+          <div class="brand">
+        <img src="CNO-logo.png" alt="College National Orthodox logo">
+        <div class="brand-copy"><span class="brand-name">CNO JavaScript Lab</span><span class="brand-sub">Learn · Write · Run</span></div>
+      </div>
+          
+          <div class="toolbar-actions">
+            <button class="run" id="runCode" type="button" title="Run code (Ctrl+Enter)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Run
+            </button>
+          </div>
+        </div>
+        <div class="editor" id="editorFrame">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <textarea class="code" id="code" aria-label="JavaScript code editor" placeholder="Start coding here, then press Run to see your results." spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+        </div>
+        <div class="editor-footer"><div class="editor-foot-left"><span class="status-dot"></span><span>JavaScript</span><span class="js-pill">ES2023</span></div><span id="lineCount">10 lines</span></div>
+        <section class="console" id="consolePanel" aria-label="Console output">
+          <div class="console-heading"><div class="console-title"><span class="console-symbol">&gt;_</span><span>CONSOLE</span><span class="console-meta" id="runState">· Output appears here</span></div><button class="clear-button" id="clearConsole" type="button">Clear</button></div>
+          <div class="console-body" id="consoleOutput" aria-live="polite"><div class="console-empty">Press <strong>Run</strong> to see your JavaScript output.</div></div>
+        </section>
+      </section>
+      <footer><span><i class="small-green"></i>Your code runs privately in this browser.</span><span>Made for curious minds.</span></footer>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const code = document.getElementById('code');
+      const gutter = document.getElementById('gutter');
+      const runButton = document.getElementById('runCode');
+      const consolePanel = document.getElementById('consolePanel');
+      const consoleOutput = document.getElementById('consoleOutput');
+
+      const runState = document.getElementById('runState');
+      let activeWorker = null;
+      let activeUrl = null;
+      let runTimer = null;
+
+      function updateLines() {
+        const count = code.value.split('\n').length;
+        gutter.innerHTML = Array.from({length: count}, (_, i) => `<div class="line-number">${i + 1}</div>`).join('');
+        document.getElementById('lineCount').textContent = `${count} ${count === 1 ? 'line' : 'lines'}`;
+      }
+      function emptyMessage(message) {
+        consoleOutput.innerHTML = '';
+        const node = document.createElement('div');
+        node.className = 'console-empty';
+        node.textContent = message;
+        consoleOutput.appendChild(node);
+      }
+      function addOutput(kind, values) {
+        const empty = consoleOutput.querySelector('.console-empty');
+        if (empty) empty.remove();
+        const row = document.createElement('div');
+        row.className = `output-row ${kind}`;
+        const label = document.createElement('span');
+        label.className = 'output-kind';
+        label.textContent = kind;
+        const value = document.createElement('span');
+        value.textContent = values;
+        row.append(label, value);
+        consoleOutput.appendChild(row);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+      function showConsole() {
+        consolePanel.hidden = false;
+
+
+      }
+      function stopWorker() {
+        if (activeWorker) activeWorker.terminate();
+        activeWorker = null;
+        clearTimeout(runTimer);
+        if (activeUrl) URL.revokeObjectURL(activeUrl);
+        activeUrl = null;
+      }
+      function runCodeNow() {
+        stopWorker();
+        showConsole();
+        emptyMessage('Running your code…');
+        runState.textContent = '· Running';
+        const boot = `
+          const stringify = value => {
+            if (typeof value === 'string') return value;
+            if (value === undefined) return 'undefined';
+            if (typeof value === 'function') return value.toString();
+            try { return JSON.stringify(value, null, 2) ?? String(value); }
+            catch (_) { return String(value); }
+          };
+          for (const level of ['log','info','warn','error','debug','table']) {
+            console[level] = (...args) => postMessage({type: level === 'debug' ? 'log' : level, values: args.map(stringify).join(' ')});
+          }
+          self.onerror = event => { postMessage({type:'error', values: event.message || 'Something went wrong.'}); return true; };
+          (async () => {\n${code.value}\n})().then(
+            () => postMessage({type:'done'}),
+            error => { postMessage({type:'error', values: error && error.stack ? error.stack : String(error)}); postMessage({type:'done'}); }
+          );
+        `;
+        try {
+          const blob = new Blob([boot], {type: 'text/javascript'});
+          activeUrl = URL.createObjectURL(blob);
+          activeWorker = new Worker(activeUrl);
+          activeWorker.onmessage = event => {
+            if (!event.data || !event.data.type) return;
+            if (event.data.type === 'done') {
+              clearTimeout(runTimer);
+              if (activeWorker) activeWorker.terminate();
+              activeWorker = null;
+              if (activeUrl) URL.revokeObjectURL(activeUrl);
+              activeUrl = null;
+              runState.textContent = '· Finished';
+              return;
+            }
+            addOutput(event.data.type, event.data.values || '');
+          };
+          activeWorker.onerror = event => {
+            event.preventDefault();
+            addOutput('error', event.message || 'Unable to run this code.');
+            clearTimeout(runTimer);
+            if (activeWorker) activeWorker.terminate();
+            activeWorker = null;
+            if (activeUrl) URL.revokeObjectURL(activeUrl);
+            activeUrl = null;
+            runState.textContent = '· Error';
+          };
+          runTimer = setTimeout(() => {
+            if (activeWorker) {
+              activeWorker.terminate();
+              activeWorker = null;
+              if (activeUrl) URL.revokeObjectURL(activeUrl);
+              activeUrl = null;
+              addOutput('warn', 'Stopped after 5 seconds so the page stays responsive.');
+              runState.textContent = '· Stopped';
+            }
+          }, 5000);
+          activeWorker.onmessageerror = () => addOutput('error', 'Could not read the code output.');
+          runState.textContent = '· Running';
+        } catch (error) {
+          addOutput('error', error.message || String(error));
+          runState.textContent = '· Error';
+        }
+      }
+      code.addEventListener('input', updateLines);
+      code.addEventListener('scroll', () => { gutter.scrollTop = code.scrollTop; });
+      code.addEventListener('keydown', event => {
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          const start = code.selectionStart;
+          const end = code.selectionEnd;
+          code.setRangeText('  ', start, end, 'end');
+          updateLines();
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault();
+          runCodeNow();
+        }
+      });
+      runButton.addEventListener('click', runCodeNow);
+
+      document.getElementById('clearConsole').addEventListener('click', () => {
+        stopWorker();
+        emptyMessage('Console cleared. Press Run to see new output.');
+        runState.textContent = '· Cleared';
+      });
+      updateLines();
+    })();
+  </script>
+</body>
+</html>

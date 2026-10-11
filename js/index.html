@@ -92,6 +92,7 @@
       </div>
           
           <div class="toolbar-actions">
+            <label style="font-size:11px;color:var(--muted);max-width:145px" title="Enables prompt, alert, and confirm. Infinite loops cannot be stopped in this mode."><input id="browserDialogs" type="checkbox" checked autocomplete="off"> Browser dialogs<br><span style="font-size:10px">No infinite-loop protection</span></label>
             <button class="run" id="runCode" type="button" title="Run code (Ctrl+Enter)">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Run
             </button>
@@ -122,6 +123,7 @@
       let activeWorker = null;
       let activeUrl = null;
       let runTimer = null;
+      let browserRun = 0;
 
       function updateLines() {
         const count = code.value.split('\n').length;
@@ -155,11 +157,43 @@
 
       }
       function stopWorker() {
+        browserRun++;
         if (activeWorker) activeWorker.terminate();
         activeWorker = null;
         clearTimeout(runTimer);
         if (activeUrl) URL.revokeObjectURL(activeUrl);
         activeUrl = null;
+      }
+      async function runWithDialogs() {
+        const run = browserRun;
+        let hadError = false;
+        const stringify = value => {
+          if (value instanceof Error) return value.name + ': ' + value.message;
+          if (typeof value === 'string') return value;
+          try { return JSON.stringify(value, null, 2) ?? String(value); }
+          catch (_) { return String(value); }
+        };
+        const output = {};
+        for (const level of ['log', 'info', 'warn', 'error', 'debug', 'table']) {
+          output[level] = (...args) => {
+            if (run !== browserRun) return;
+            if (level === 'error') hadError = true;
+            addOutput(level === 'debug' ? 'log' : level, args.map(stringify).join(' '));
+          };
+        }
+        try {
+          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+          await new AsyncFunction('console', 'prompt', 'alert', 'confirm', code.value)(
+            output, window.prompt.bind(window), window.alert.bind(window), window.confirm.bind(window)
+          );
+        } catch (error) {
+          if (run !== browserRun) return;
+          hadError = true;
+          addOutput('error', stringify(error));
+        }
+        if (run !== browserRun) return;
+        runState.textContent = hadError ? '· Error' : '· Finished';
+        if (!hadError && consoleOutput.querySelector('.console-empty')) emptyMessage('Code finished without output.');
       }
       function runCodeNow() {
         stopWorker();
@@ -167,7 +201,14 @@
         emptyMessage('Running your code…');
         runState.textContent = '· Running';
         let hadError = false;
+        if (document.getElementById('browserDialogs').checked) {
+          runWithDialogs();
+          return;
+        }
         const boot = `
+          for (const name of ['prompt', 'alert', 'confirm']) {
+            self[name] = () => { throw new Error(name + '() requires Browser dialogs. Check the Browser dialogs option beside Run, then run your code again.'); };
+          }
           const stringify = value => {
             if (value instanceof Error) return value.name + ': ' + value.message;
             if (typeof value === 'string') return value;

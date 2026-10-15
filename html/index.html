@@ -111,10 +111,10 @@
         </section>
         <section class="console" id="previewPanel" aria-label="HTML page preview">
           <div class="console-heading"><div class="console-title"><span class="console-symbol">▣</span><span>PAGE PREVIEW</span><span class="console-meta" id="runState">· Press Run to preview</span></div><button class="clear-button" id="clearPreview" type="button">Clear</button></div>
-          <div class="console-body preview-body"><iframe class="preview-frame" id="previewFrame" title="Rendered HTML page preview" sandbox="" referrerpolicy="no-referrer"></iframe></div>
+          <div class="console-body preview-body"><iframe class="preview-frame" id="previewFrame" title="Rendered HTML page preview" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe></div>
         </section>
       </section>
-      <footer><span><i class="small-green"></i>Your page is shown in a protected preview.</span><span>Made for curious minds.</span></footer>
+      <footer><span><i class="small-green"></i>Your page is shown in a protected preview. External links open in a new tab.</span><span>Made for curious minds.</span></footer>
     </main>
   </div>
   <script src="html-checker.js"></script>
@@ -163,7 +163,19 @@
           row.append(location, message);
           checkOutput.appendChild(row);
         }
-        preview.srcdoc = code.value;
+        const page = new DOMParser().parseFromString(source, 'text/html');
+        for (const link of page.querySelectorAll('a[href], area[href]')) {
+          let href = link.getAttribute('href').trim();
+          if (/^www\./i.test(href)) {
+            href = `https://${href}`;
+            link.setAttribute('href', href);
+          }
+          if (/^(https?:|\/\/)/i.test(href)) {
+            link.setAttribute('target', '_blank');
+            link.relList.add('noopener', 'noreferrer');
+          }
+        }
+        preview.srcdoc = '<!doctype html>\n' + page.documentElement.outerHTML;
         runState.textContent = '· Preview updated';
       }
       code.addEventListener('input', () => { updateLines(); checks.hidden = true; });

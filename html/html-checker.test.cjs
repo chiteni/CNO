@@ -50,13 +50,22 @@ context.document = {
   createElement: element
 };
 context.getComputedStyle = () => ({lineHeight: '25px'});
+const previewLinks = [];
+context.DOMParser = class {
+  parseFromString(source) {
+    return {
+      querySelectorAll: () => previewLinks,
+      documentElement: {outerHTML: source}
+    };
+  }
+};
 const page = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 new vm.Script(page.match(/<script>\s*([\s\S]*?)<\/script>/)[1]).runInNewContext(context);
 nodes.code.value = '<h7>Hello</h7>';
 nodes.runCode.click();
 assert.equal(nodes.htmlChecks.hidden, false);
 assert.match(nodes.checkSummary.textContent, /issues found/);
-assert.equal(nodes.previewFrame.srcdoc, nodes.code.value);
+assert.equal(nodes.previewFrame.srcdoc, '<!doctype html>\n' + nodes.code.value);
 nodes.checkOutput.children[0].children[0].click();
 assert.equal(nodes.code.selectionStart, 0);
 nodes.code.value = '<h1>Hello</h1>';
@@ -65,6 +74,24 @@ assert.equal(nodes.htmlChecks.hidden, true);
 nodes.runCode.click();
 assert.equal(nodes.checkOutput.children.length, 0);
 assert.match(nodes.checkSummary.textContent, /No tag errors/);
+for (const href of ['www.cnn.com', 'https://example.com', '//example.com', '#section', 'lesson.html']) {
+  const attributes = {href};
+  const rel = new Set();
+  previewLinks.push({
+    getAttribute: name => attributes[name],
+    setAttribute: (name, value) => { attributes[name] = value; },
+    relList: {add: (...values) => values.forEach(value => rel.add(value))},
+    attributes, rel
+  });
+}
+nodes.runCode.click();
+assert.equal(previewLinks[0].attributes.href, 'https://www.cnn.com');
+for (const link of previewLinks.slice(0, 3)) {
+  assert.equal(link.attributes.target, '_blank');
+  assert(link.rel.has('noopener') && link.rel.has('noreferrer'));
+}
+for (const link of previewLinks.slice(3)) assert.equal(link.attributes.target, undefined);
+assert.match(page, /sandbox="allow-popups allow-popups-to-escape-sandbox"/);
 nodes.clearPreview.click();
 assert.equal(nodes.htmlChecks.hidden, true);
 assert.equal(nodes.previewFrame.srcdoc, '');

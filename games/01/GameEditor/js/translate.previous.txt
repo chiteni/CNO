@@ -1,0 +1,52 @@
+// =====================================================
+// translate.js
+// Translates student DSL and runs it on top of the runtime
+// Supported:
+//   Create("Paddle"), Create("Ball"), Create("Brick")
+//   repeat(10){ ... }
+// =====================================================
+
+(function (global) {
+  let runtime = null;
+
+  function translateStudentCode(code) {
+    return code.replace(
+      /repeat\s*\(\s*(\d+)\s*\)\s*\{/g,
+      "for (let __loop = 0; __loop < $1; __loop++) {"
+    );
+  }
+
+  function runStudentCode(code, logger) {
+    if (!global.game) {
+      throw new Error("Game engine not ready.");
+    }
+
+    runtime = new global.BrickDSL.BrickRuntime(global.game);
+    runtime.setupScene();
+
+    const translated = translateStudentCode(code);
+    const Create = runtime.create.bind(runtime);
+
+    try {
+      const fn = new Function("Create", translated);
+      fn(Create);
+      if (typeof logger === "function") {
+        logger("✅ Code ran.");
+      }
+      return true;
+    } catch (e) {
+      if (typeof logger === "function") {
+        logger("❌ " + e.message);
+      }
+      return false;
+    }
+  }
+
+  global.StudentRunner = {
+    translateStudentCode,
+    runStudentCode,
+    getRuntime: function () {
+      return runtime;
+    }
+  };
+})(window);

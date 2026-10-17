@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Break The Bricks Editor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: #111827;
+      color: #e5e7eb;
+      overflow: hidden;
+    }
+
+    #left {
+      flex: 1.1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      border-right: 1px solid #374151;
+      min-height: 0;
+    }
+
+    #canvas {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: #000;
+      border-radius: 8px;
+      display: block;
+    }
+
+    #splitter {
+      width: 6px;
+      cursor: ew-resize;
+      background: #1f2937;
+      flex: 0 0 6px;
+      transition: background 0.2s ease;
+    }
+
+    #splitter:hover,
+    body.resizing #splitter {
+      background: #374151;
+    }
+
+    #right {
+      flex: 0 0 50%;
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 8px;
+      min-height: 0;
+      min-width: 320px;
+      max-width: 80vw;
+    }
+
+    body.editor-hidden #left {
+      flex: 1 1 auto;
+      width: 100%;
+      padding: 0;
+      border-right: none;
+    }
+
+    body.editor-hidden #canvas {
+      border-radius: 0;
+    }
+
+    body.editor-hidden #right,
+    body.editor-hidden #splitter {
+      display: none;
+    }
+
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #10b981;
+      color: #022c22;
+    }
+
+    button.secondary {
+      background: #374151;
+      color: #e5e7eb;
+    }
+
+    #editor {
+      flex: 1;
+      min-height: 0;
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: pre;
+      tab-size: 4;
+    }
+
+    #console {
+      height: 90px;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      padding: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="left">
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <button id="btn-hide-editor" class="secondary">Hide Editor</button>
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="splitter" title="Drag to resize editor"></div>
+
+  <div id="right">
+    <div id="header">
+      <div>Break The Bricks – Student Editor</div>
+      <div id="buttons">
+        <button class="secondary" id="btn-reset">Reset</button>
+        <button id="btn-run">Run ▶</button>
+      </div>
+    </div>
+
+    <textarea id="editor"></textarea>
+
+    <div>
+      <div style="font-size:12px;color:#9ca3af;">Console</div>
+      <div id="console"></div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+  <script src="js/myCode.js"></script>
+  <script src="js/translate.js"></script>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const editorEl = document.getElementById("editor");
+    const btnRunEl = document.getElementById("btn-run");
+    const btnResetEl = document.getElementById("btn-reset");
+    const btnHideEditor = document.getElementById("btn-hide-editor");
+    const leftEl = document.getElementById("left");
+    const rightEl = document.getElementById("right");
+    const splitterEl = document.getElementById("splitter");
+    const consoleBox = document.getElementById("console");
+
+    let game;
+
+    const STARTER_CODE = `// Choose lesson 1, 2 or 3, then click Run.
+let lesson = 3;
+let speed = 5;
+let jumpPower = 12;
+let ballSize = 30;
+let ballColor = "cyan";
+
+// Lesson 1: change the numbers above.
+// Lesson 2: use score instead of coins below.
+// Lesson 3: keep three independent conditions.
+if (coins >= 5) {
+    superJump = true;
+}
+if (coins >= 10) {
+    ballColor = "red";
+}
+if (coins >= 15) {
+    doorOpen = true;
+}
+`;
+
+    function clearConsole() {
+      consoleBox.textContent = "";
+    }
+
+    function printToConsole(msg) {
+      consoleBox.textContent += msg + "\n";
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, rect.width);
+      const h = Math.max(1, rect.height);
+
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (game) {
+        game.canvas = canvas;
+        game.ctx = ctx;
+      }
+    }
+
+    function updateEditorButtonLabel() {
+      btnHideEditor.textContent = document.body.classList.contains("editor-hidden")
+        ? "Show Editor"
+        : "Hide Editor";
+    }
+
+    function toggleEditorOnly() {
+      document.body.classList.toggle("editor-hidden");
+      updateEditorButtonLabel();
+      resizeCanvas();
+      runUserCode();
+    }
+
+    function startEditorResize(e) {
+      if (document.body.classList.contains("editor-hidden")) return;
+
+      e.preventDefault();
+      document.body.classList.add("resizing");
+
+      function onMouseMove(ev) {
+        const totalWidth = window.innerWidth;
+        const newRightWidth = totalWidth - ev.clientX;
+        const minRightWidth = 320;
+        const maxRightWidth = Math.floor(totalWidth * 0.8);
+        const clampedRightWidth = Math.min(maxRightWidth, Math.max(minRightWidth, newRightWidth));
+
+        rightEl.style.width = clampedRightWidth + "px";
+        rightEl.style.flexBasis = clampedRightWidth + "px";
+        leftEl.style.flex = "1 1 auto";
+        resizeCanvas();
+      }
+
+      function stopResize() {
+        document.body.classList.remove("resizing");
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", stopResize);
+        runUserCode();
+      }
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", stopResize);
+    }
+
+    function runUserCode() {
+      clearConsole();
+
+      if (!game) {
+        printToConsole("❌ Game engine not ready.");
+        return;
+      }
+
+      StudentRunner.runStudentCode(editorEl.value, printToConsole);
+    }
+
+    function init() {
+      game = new Game();
+      window.game = game;
+      game.animate();
+
+      editorEl.value = STARTER_CODE;
+      rightEl.style.width = "50%";
+      rightEl.style.flexBasis = "50%";
+
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => resizeCanvas());
+        ro.observe(leftEl);
+        ro.observe(canvas);
+      }
+
+      splitterEl.addEventListener("mousedown", startEditorResize);
+      btnRunEl.addEventListener("click", runUserCode);
+      btnResetEl.addEventListener("click", () => {
+        editorEl.value = STARTER_CODE;
+        runUserCode();
+      });
+      btnHideEditor.addEventListener("click", toggleEditorOnly);
+
+      updateEditorButtonLabel();
+      runUserCode();
+    }
+
+    window.addEventListener("load", init);
+  </script>
+</body>
+</html>

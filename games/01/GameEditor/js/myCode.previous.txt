@@ -1,0 +1,356 @@
+// =====================================================
+// myCode.js
+// Break the Bricks runtime objects using your game engine
+// =====================================================
+
+(function (global) {
+  class BackgroundSprite extends Sprite {
+    constructor(runtime) {
+      super();
+      this.runtime = runtime;
+    }
+
+    update(sprites, keys, mouse) {
+      return false;
+    }
+
+    draw(ctx) {
+      const w = this.runtime.game.canvas.width;
+      const h = this.runtime.game.canvas.height;
+
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "#0f172a");
+      g.addColorStop(1, "#1e293b");
+
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(0, 40, w, 100);
+    }
+  }
+
+  class HudSprite extends Sprite {
+    constructor(runtime) {
+      super();
+      this.runtime = runtime;
+    }
+
+    update(sprites, keys, mouse) {
+      return false;
+    }
+
+    draw(ctx) {
+      const w = this.runtime.game.canvas.width;
+
+      ctx.save();
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "16px Arial";
+      ctx.fillText("Score: " + this.runtime.score, 16, 24);
+      ctx.fillText("Lives: " + this.runtime.lives, w - 100, 24);
+
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.font = "12px Arial";
+      ctx.fillText("Move paddle with Arrow Left / Arrow Right or A / D", 16, 45);
+
+      if (this.runtime.win) {
+        ctx.fillStyle = "#22c55e";
+        ctx.font = "28px Arial";
+        ctx.fillText("You Win!", w / 2 - 55, 280);
+      }
+
+      if (this.runtime.gameOver) {
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "28px Arial";
+        ctx.fillText("Game Over", w / 2 - 75, 280);
+      }
+
+      ctx.restore();
+    }
+  }
+
+  class StudentPaddle extends Sprite {
+    constructor(runtime) {
+      super();
+      this.runtime = runtime;
+
+      this.x = 100;
+      this.y = 520;
+      this.width = 100;
+      this.height = 15;
+      this.color = "red";
+      this.movement = "horizontal";
+      this.Image = "";
+      this.speed = 6;
+    }
+
+    update(sprites, keys, mouse) {
+      const canvas = this.runtime.game.canvas;
+
+      if (this.movement === "horizontal") {
+        if (keys["ArrowLeft"] || keys["a"]) {
+          this.x -= this.speed;
+        }
+        if (keys["ArrowRight"] || keys["d"]) {
+          this.x += this.speed;
+        }
+      }
+
+      if (this.x < 0) this.x = 0;
+      if (this.x + this.width > canvas.width) {
+        this.x = canvas.width - this.width;
+      }
+
+      return false;
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.restore();
+    }
+  }
+
+  class StudentBrick extends Sprite {
+    constructor(runtime) {
+      super();
+      this.runtime = runtime;
+
+      this.x = 100;
+      this.y = 100;
+      this.width = 50;
+      this.height = 20;
+      this.color = "green";
+      this.Image = "";
+      this.dead = false;
+    }
+
+    update(sprites, keys, mouse) {
+      return this.dead;
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
+      ctx.restore();
+    }
+  }
+
+  class StudentBall extends Sprite {
+    constructor(runtime) {
+      super();
+      this.runtime = runtime;
+
+      this.x = 120;
+      this.y = 300;
+      this.radius = 10;
+      this.color = "yellow";
+      this.direction = 315;
+      this.speed = 4;
+      this.Image = "";
+    }
+
+    resetOnPaddle() {
+      const paddle = this.runtime.getMainPaddle();
+      const canvas = this.runtime.game.canvas;
+
+      if (paddle) {
+        this.x = paddle.x + paddle.width / 2;
+        this.y = paddle.y - this.radius - 2;
+      } else {
+        this.x = canvas.width / 2;
+        this.y = canvas.height - 60;
+      }
+
+      this.direction = 315;
+    }
+
+    getVelocity() {
+      const angle = this.direction * Math.PI / 180;
+      return {
+        vx: Math.cos(angle) * this.speed,
+        vy: Math.sin(angle) * this.speed
+      };
+    }
+
+    setVelocity(vx, vy) {
+      this.direction = Math.atan2(vy, vx) * 180 / Math.PI;
+    }
+
+    circleRectCollision(rx, ry, rw, rh) {
+      const closestX = Math.max(rx, Math.min(this.x, rx + rw));
+      const closestY = Math.max(ry, Math.min(this.y, ry + rh));
+      const dx = this.x - closestX;
+      const dy = this.y - closestY;
+      return (dx * dx + dy * dy) <= this.radius * this.radius;
+    }
+
+    update(sprites, keys, mouse) {
+      if (this.runtime.win || this.runtime.gameOver) {
+        return false;
+      }
+
+      const canvas = this.runtime.game.canvas;
+      let velocity = this.getVelocity();
+      this.x += velocity.vx;
+      this.y += velocity.vy;
+
+      // Walls
+      if (this.x - this.radius <= 0) {
+        this.x = this.radius;
+        velocity.vx *= -1;
+        this.setVelocity(velocity.vx, velocity.vy);
+      }
+
+      if (this.x + this.radius >= canvas.width) {
+        this.x = canvas.width - this.radius;
+        velocity.vx *= -1;
+        this.setVelocity(velocity.vx, velocity.vy);
+      }
+
+      if (this.y - this.radius <= 0) {
+        this.y = this.radius;
+        velocity.vy *= -1;
+        this.setVelocity(velocity.vx, velocity.vy);
+      }
+
+      // Bottom
+      if (this.y - this.radius > canvas.height) {
+        this.runtime.loseLife();
+        this.resetOnPaddle();
+        return false;
+      }
+
+      // Paddle
+      const paddle = this.runtime.getMainPaddle();
+      if (paddle && this.circleRectCollision(paddle.x, paddle.y, paddle.width, paddle.height)) {
+        this.y = paddle.y - this.radius - 1;
+
+        const hit = (this.x - paddle.x) / paddle.width - 0.5;
+        velocity.vx = this.speed * 2 * hit;
+        velocity.vy = -Math.abs(this.speed);
+        this.setVelocity(velocity.vx, velocity.vy);
+      }
+
+      // Bricks
+      for (let i = this.runtime.bricks.length - 1; i >= 0; i--) {
+        const brick = this.runtime.bricks[i];
+        if (!brick.dead && this.circleRectCollision(brick.x, brick.y, brick.width, brick.height)) {
+          brick.dead = true;
+          this.runtime.removeBrick(brick);
+          this.runtime.score += 10;
+
+          velocity = this.getVelocity();
+          velocity.vy *= -1;
+          this.setVelocity(velocity.vx, velocity.vy);
+
+          if (this.runtime.bricks.length === 0) {
+            this.runtime.win = true;
+          }
+          break;
+        }
+      }
+
+      return false;
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  class BrickRuntime {
+    constructor(game) {
+      this.game = game;
+      this.score = 0;
+      this.lives = 3;
+      this.win = false;
+      this.gameOver = false;
+
+      this.paddles = [];
+      this.balls = [];
+      this.bricks = [];
+
+      this.background = new BackgroundSprite(this);
+      this.hud = new HudSprite(this);
+    }
+
+    setupScene() {
+      this.game.sprites = [];
+      this.score = 0;
+      this.lives = 3;
+      this.win = false;
+      this.gameOver = false;
+      this.paddles = [];
+      this.balls = [];
+      this.bricks = [];
+
+      this.game.addSprite(this.background);
+      this.game.addSprite(this.hud);
+    }
+
+    create(type) {
+      let object = null;
+
+      switch (type) {
+        case "Paddle":
+          object = new StudentPaddle(this);
+          this.paddles.push(object);
+          break;
+
+        case "Ball":
+          object = new StudentBall(this);
+          this.balls.push(object);
+          break;
+
+        case "Brick":
+          object = new StudentBrick(this);
+          this.bricks.push(object);
+          break;
+
+        default:
+          throw new Error("Unknown type: " + type);
+      }
+
+      this.game.addSprite(object);
+      return object;
+    }
+
+    getMainPaddle() {
+      if (this.paddles.length > 0) return this.paddles[0];
+      return null;
+    }
+
+    removeBrick(brickToRemove) {
+      for (let i = this.bricks.length - 1; i >= 0; i--) {
+        if (this.bricks[i] === brickToRemove) {
+          this.bricks.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    loseLife() {
+      this.lives--;
+      if (this.lives <= 0) {
+        this.lives = 0;
+        this.gameOver = true;
+      }
+    }
+  }
+
+  global.BrickDSL = {
+    BrickRuntime
+  };
+})(window);

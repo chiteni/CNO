@@ -2,7 +2,7 @@
   const root = new URL('../', document.currentScript.src);
   const host = document.createElement('div');
   const shadow = host.attachShadow({mode: 'open'});
-  const pages = [['Home', 'index.html'], ['Games', 'games/games.html'], ['HTML', 'html/index.html'], ['Learn HTML', 'html/learn/index.html'], ['JavaScript', 'js/index.html']];
+  const pages = [['Home', 'index.html'], ['Games', 'games/games.html'], ['HTML', 'html/index.html'], ['JavaScript', 'js/index.html']];
   const current = location.pathname.replace(/\/$/, '/index.html');
   shadow.innerHTML = `
     <style>

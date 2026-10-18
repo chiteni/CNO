@@ -80,15 +80,35 @@
     .check-location{border:0;background:none;color:#ffb6b2;text-decoration:underline;cursor:pointer;font:inherit;padding:0;white-space:nowrap}
     .check-location:focus-visible{outline:2px solid #85abc4;outline-offset:3px}
     @media(max-width:700px){.preview-frame{height:320px}}
+    .promo-card{margin-bottom:22px}
+    .promo-inner{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px 30px;flex-wrap:wrap}
+    .promo-copy{min-width:0;max-width:640px}
+    .promo-copy h2{margin:0 0 6px;font-size:22px;letter-spacing:-.03em}
+    .promo-copy p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.6}
+    .promo-points{display:flex;gap:10px;flex-wrap:wrap}
+    .promo-points span{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:11px;color:#4b6275;background:#f7fafc}
+    .promo-cta{flex:none;text-decoration:none}
+    @media(max-width:700px){.promo-inner{padding:20px 18px}.promo-copy h2{font-size:19px}}
 </style>
 <script src="../common/common-menu.js" defer></script></head>
 <body>
   <div class="page">
     <main>
+      <section class="workbench promo-card" aria-label="Learn HTML course">
+        <div class="promo-inner">
+          <div class="promo-copy">
+            <div class="eyebrow">Step-by-step course</div>
+            <h2>Learn HTML</h2>
+            <p>New to HTML? Work through 10 short chapters: discover each tag, watch an example, practice with guidance, then build a page on your own.</p>
+            <div class="promo-points"><span>10 chapters</span><span>Hints as you go</span><span>No account needed</span></div>
+          </div>
+          <a class="run promo-cta" href="learn/index.html">Start Learning &rarr;</a>
+        </div>
+      </section>
       <section class="workbench" aria-label="HTML editor and page preview">
         <div class="toolbar">
           <section class="intro" aria-labelledby="page-title">
-        <div><div class="eyebrow">Your HTML playground</div><h1 id="page-title">Build a page with HTML.</h1><p>Write some HTML, press Run, and see your page in the preview below. <a href="learn/index.html" style="color:var(--blue);font-weight:650">New to HTML? Try the step-by-step course &rarr;</a></p></div>
+        <div><div class="eyebrow">Write HTML</div><h1 id="page-title">Build a page with HTML.</h1><p>Write some HTML, press Run, and see your page in the preview below.</p></div>
       </section>
           <div class="brand">
         <img src="../images/cno-logo.png" alt="College National Orthodox logo">

@@ -29,6 +29,13 @@
     .intro p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
     .tip{display:flex;align-items:center;gap:5px;border:1px solid #dce8ef;border-radius:8px;padding:7px 9px;color:#526b7f;background:#fff;font-size:10px;white-space:nowrap}
     kbd{font-family:inherit;font-size:10px;background:#f1f5f8;border:1px solid #dce5ec;border-radius:4px;padding:2px 4px;color:#435a6f}
+    .practice{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:18px;padding:28px 30px;border:1px solid #dce5ec;border-radius:15px;background:#fff}
+    .practice h2{margin:6px 0 8px;font-size:22px;line-height:1.2;letter-spacing:-.025em}
+    .practice p{max-width:640px;margin:0;color:var(--muted);font-size:13px;line-height:1.65}
+    .practice-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:13px}
+    .practice-tags span{padding:6px 11px;border:1px solid #dce8ef;border-radius:999px;background:var(--soft);color:var(--blue-dark);font-size:11px}
+    .practice .run{flex:none;text-decoration:none;white-space:nowrap}
+    @media(max-width:700px){.practice{align-items:flex-start;flex-direction:column;gap:18px;padding:22px 20px}}
     .workbench{border:1px solid #dce5ec;background:#fff;border-radius:15px;box-shadow:0 14px 42px #24415c0d;overflow:hidden}
     .toolbar{min-height:62px;padding:12px 17px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
     .file-label{display:flex;align-items:center;gap:10px;min-width:0}
@@ -81,6 +88,15 @@
   <div class="page">
 
     <main>
+      <section class="practice" aria-labelledby="practice-title">
+        <div>
+          <div class="eyebrow">Hands-on JavaScript</div>
+          <h2 id="practice-title">Practice It</h2>
+          <p>Put your JavaScript skills to work with 18 exercises: explore variables, predict output, fix mistakes, and practice conditions.</p>
+          <div class="practice-tags"><span>18 exercises</span><span>Run your code</span><span>Solutions included</span></div>
+        </div>
+        <a class="run" href="exercises.html">Start Practicing <span aria-hidden="true">&rarr;</span></a>
+      </section>
       <section class="workbench" aria-label="JavaScript editor and console">
         <div class="toolbar">
           <section class="intro" aria-labelledby="page-title">
